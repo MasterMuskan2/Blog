@@ -12,6 +12,8 @@ func Router() *mux.Router{
 	r.HandleFunc("/blogs", controller.GetAllBlogs).Methods("GET")
 	r.HandleFunc("/blog/{id}", controller.GetAllBlogsOfAuthor).Methods("GET")
 	r.HandleFunc("/blog", controller.PublishBlog).Methods("POST")
-
+	r.HandleFunc("/blog/{id}", controller.UpdateBlog).Methods("PUT")
+	r.HandleFunc("/blog/{id}", controller.DeleteBlog).Methods("DELETE")
+	
 	return r
 }
