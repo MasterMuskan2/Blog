@@ -49,7 +49,7 @@ func PublishBlog(w http.ResponseWriter, r *http.Request) {
 	blog.Id = strconv.Itoa(rand.Intn(100000))
 	database.Blogs = append(database.Blogs, blog)
 	author := blog.Author
-	value := blog.Title
+	value := blog.Id
 	database.AuthorToBlogs[author] = append(database.AuthorToBlogs[author], value)
 	json.NewEncoder(w).Encode("The blog has been published!!!")
 }
@@ -85,6 +85,14 @@ func DeleteBlog(w http.ResponseWriter, r *http.Request) {
 	for index, value := range database.Blogs {
 		if value.Id == params["id"] {
 			database.Blogs = append(database.Blogs[:index], database.Blogs[index+1:]...)
+			// Need to delete the Id from the AuthorToBlog table too
+			var name = value.Author
+			for indexx, valuee := range database.AuthorToBlogs[name]{
+				if valuee == params["id"]{
+					database.AuthorToBlogs[name] = append(database.AuthorToBlogs[name][:indexx], database.AuthorToBlogs[name][indexx+1:]...)
+					break
+				}
+			}
 			json.NewEncoder(w).Encode("This blog has been deleted from the database!!!")
 			return
 		}
