@@ -50,7 +50,9 @@ func PublishBlog(w http.ResponseWriter, r *http.Request) {
 	database.Blogs = append(database.Blogs, blog)
 	author := blog.Author
 	value := blog.Id
+	genre := blog.Genre
 	database.AuthorToBlogs[author] = append(database.AuthorToBlogs[author], value)
+	database.GenreToBlogs[genre] = append(database.GenreToBlogs[genre], value)
 	json.NewEncoder(w).Encode("The blog has been published!!!")
 }
 
@@ -90,6 +92,12 @@ func DeleteBlog(w http.ResponseWriter, r *http.Request) {
 			for indexx, valuee := range database.AuthorToBlogs[name]{
 				if valuee == params["id"]{
 					database.AuthorToBlogs[name] = append(database.AuthorToBlogs[name][:indexx], database.AuthorToBlogs[name][indexx+1:]...)
+					break
+				}
+			}
+			for indexx, valuee := range database.GenreToBlogs[name]{
+				if valuee == params["id"]{
+					database.GenreToBlogs[name] = append(database.GenreToBlogs[name][:indexx], database.GenreToBlogs[name][indexx+1:]...)
 					break
 				}
 			}
