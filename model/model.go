@@ -10,3 +10,15 @@ type Blog struct {
 	Content           string `json:"content"`
 	YearOfPublication int    `json:"year"`
 }
+
+type User struct{
+	gorm.Model
+	UserName string `json:"username"`
+	UserEmail string `gorm:"unique" json:"useremail"`
+}
+
+type Author struct{
+	gorm.Model
+	AuthorName string `json:"authorname"`
+	AuthorEmail string `json:"authoremail"`
+}

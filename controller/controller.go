@@ -45,6 +45,37 @@ func GetAllBlogsOfAuthor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if result.RowsAffected == 0{
+		json.NewEncoder(w).Encode("No blogs found for this author!!!")
+		return
+	}
+
+	json.NewEncoder(w).Encode(blogs)
+}
+
+// Get all the blogs of a praticular GENRE
+
+func GetAllBlogsOfAGenre(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(r)
+
+	genre := params["id"]
+
+	var blogs []model.Blog
+
+	result := database.DB.Where("genre = ?", genre).Find(&blogs)
+
+	if result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.RowsAffected == 0{
+		json.NewEncoder(w).Encode("No blogs found for this genre!!!")
+		return
+	}
+
 	json.NewEncoder(w).Encode(blogs)
 }
 
