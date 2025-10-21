@@ -4,7 +4,6 @@ import (
 	"blog/database"
 	"blog/model"
 	"encoding/json"
-	"math/rand"
 	"net/http"
 	"strconv"
 
@@ -15,7 +14,17 @@ import (
 
 func GetAllBlogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(database.Blogs)
+
+	var blogs []model.Blog
+
+	result := database.DB.Find(&blogs)
+
+	if result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(blogs)
 }
 
 // Get all the Blogs -> Blogs of each Author
@@ -25,14 +34,18 @@ func GetAllBlogsOfAuthor(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
 
-	var dataset = database.AuthorToBlogs
-	var result []string
-	for author, value := range dataset {
-		if author == params["id"] {
-			result = append(result, value...)
-		}
+	author := params["id"]
+
+	var blogs []model.Blog
+
+	result := database.DB.Where("author = ?", author).Find(&blogs)
+
+	if result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
 	}
-	json.NewEncoder(w).Encode(&result)
+
+	json.NewEncoder(w).Encode(blogs)
 }
 
 // Push the blog in the database
@@ -40,20 +53,19 @@ func GetAllBlogsOfAuthor(w http.ResponseWriter, r *http.Request) {
 func PublishBlog(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if r.Body == nil {
-		json.NewEncoder(w).Encode("Please enter the correct input!!!")
+	var blog model.Blog
+	if err := json.NewDecoder(r.Body).Decode(&blog); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
 	}
 
-	var blog model.Blog
-	_ = json.NewDecoder(r.Body).Decode(&blog)
-	blog.Id = strconv.Itoa(rand.Intn(100000))
-	database.Blogs = append(database.Blogs, blog)
-	author := blog.Author
-	value := blog.Id
-	genre := blog.Genre
-	database.AuthorToBlogs[author] = append(database.AuthorToBlogs[author], value)
-	database.GenreToBlogs[genre] = append(database.GenreToBlogs[genre], value)
-	json.NewEncoder(w).Encode("The blog has been published!!!")
+	result := database.DB.Create(&blog)
+	if result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode("Blog has been published successfully!")
 }
 
 // Update the Blog by it's title
@@ -63,18 +75,30 @@ func UpdateBlog(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
 
-	for index, value := range database.Blogs {
-		if value.Id == params["id"] {
-			database.Blogs = append(database.Blogs[:index], database.Blogs[index+1:]...)
-			var blog model.Blog
-			_ = json.NewDecoder(r.Body).Decode(&blog)
-			blog.Id = params["id"]
-			database.Blogs = append(database.Blogs, blog)
-			json.NewEncoder(w).Encode("The blog has been update in the database!!!")
-			return
-		}
+	id := params["id"]
+
+	var existingBlog model.Blog
+	if err := database.DB.First(&existingBlog, id).Error; err != nil {
+		http.Error(w, "Blog not found", http.StatusNotFound)
+		return
 	}
-	json.NewEncoder(w).Encode("No blog found with the given title!!!")
+
+	var updatedData model.Blog
+	if err := json.NewDecoder(r.Body).Decode(&updatedData); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	// Update fields
+	existingBlog.Title = updatedData.Title
+	existingBlog.Genre = updatedData.Genre
+	existingBlog.Author = updatedData.Author
+	existingBlog.Content = updatedData.Content
+	existingBlog.YearOfPublication = updatedData.YearOfPublication
+
+	database.DB.Save(&existingBlog)
+
+	json.NewEncoder(w).Encode("Blog updated successfully!")
 }
 
 // Delete a blog from the database
@@ -84,26 +108,25 @@ func DeleteBlog(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
 
-	for index, value := range database.Blogs {
-		if value.Id == params["id"] {
-			database.Blogs = append(database.Blogs[:index], database.Blogs[index+1:]...)
-			// Need to delete the Id from the AuthorToBlog table too
-			var name = value.Author
-			for indexx, valuee := range database.AuthorToBlogs[name]{
-				if valuee == params["id"]{
-					database.AuthorToBlogs[name] = append(database.AuthorToBlogs[name][:indexx], database.AuthorToBlogs[name][indexx+1:]...)
-					break
-				}
-			}
-			for indexx, valuee := range database.GenreToBlogs[name]{
-				if valuee == params["id"]{
-					database.GenreToBlogs[name] = append(database.GenreToBlogs[name][:indexx], database.GenreToBlogs[name][indexx+1:]...)
-					break
-				}
-			}
-			json.NewEncoder(w).Encode("This blog has been deleted from the database!!!")
-			return
-		}
+	id := params["id"]
+
+	// Convert id string to uint
+	blogID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid blog ID", http.StatusBadRequest)
+		return
 	}
-	json.NewEncoder(w).Encode("No blog found with the input title, please enter the correct title!!!")
+
+	result := database.DB.Delete(&model.Blog{}, blogID)
+	if result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		http.Error(w, "Blog not found", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode("Blog deleted successfully!")
 }
