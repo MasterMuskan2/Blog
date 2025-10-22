@@ -77,6 +77,22 @@ func AddCommentToBlog(w http.ResponseWriter, r *http.Request){
 
 // Get all the likes of a particular User
 
-// func 
+func GetAllLikesOfUser(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	userId := params["id"]
+	var count int64
+	database.DB.Model(model.Like{}).Where("user_id =?", userId).Count(&count)
+	json.NewEncoder(w).Encode(map[string]int64{"total_likes": count})
+}
 
 // Get all the comments of a particular user
+
+func GetAllCommentsOfUser(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	userId := params["id"]
+	var comments []string
+	database.DB.Model(model.Comment{}).Where("user_id =?", userId).Pluck("content", &comments)
+	json.NewEncoder(w).Encode(comments)
+}
