@@ -90,6 +90,8 @@ func PublishBlog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	
+
 	result := database.DB.Create(&blog)
 	if result.Error != nil {
 		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
