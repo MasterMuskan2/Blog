@@ -3,6 +3,7 @@ package router
 import (
 	"blog/controller"
 	"blog/registration"
+	"blog/statistics"
 
 	"github.com/gorilla/mux"
 )
@@ -30,9 +31,18 @@ func Router() *mux.Router{
 
 	r.HandleFunc("/likes/{id}", controller.GetLikeCount).Methods("GET")
 	r.HandleFunc("/like/{id}", controller.AddLikeToBlog).Methods("POST")  
-	
+
 	r.HandleFunc("/comments/{id}", controller.GetAllCommentsOfBlog).Methods("GET")
 	r.HandleFunc("/comment/{id}", controller.AddCommentToBlog).Methods("POST")
+
+	r.HandleFunc("/like/count/{id}", controller.GetAllLikesOfUser).Methods("GET")
+	r.HandleFunc("/comment/count/{id}", controller.GetAllCommentsOfUser).Methods("GET")
+
+	// APIs for Statistics
+
+	r.HandleFunc("/stats/author/{id}", statistics.GetAuthorStats).Methods("GET")
+
+	r.HandleFunc("/stats/user/{id}", statistics.GetUserStats).Methods("GET")
 
 	return r
 }
