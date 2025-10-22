@@ -26,5 +26,13 @@ func Router() *mux.Router{
 	r.HandleFunc("/authors", registration.GetAllAuthors).Methods("GET")
 	r.HandleFunc("/author/register", registration.RegisterAuthor).Methods("POST")
 
+	// APIs for Interaction Functions
+
+	r.HandleFunc("/likes/{id}", controller.GetLikeCount).Methods("GET")
+	r.HandleFunc("/like/{id}", controller.AddLikeToBlog).Methods("POST")  
+	
+	r.HandleFunc("/comments/{id}", controller.GetAllCommentsOfBlog).Methods("GET")
+	r.HandleFunc("/comment/{id}", controller.AddCommentToBlog).Methods("POST")
+
 	return r
 }
