@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Get all the Blogs
+// Get all the Blogs from the database
 
 func GetAllBlogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
